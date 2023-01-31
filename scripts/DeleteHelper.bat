@@ -7,7 +7,7 @@ REM  Currently hosted at https://github.com/adisak/MiscCMDUtils
 REM -------------------------------------------------------------------
 
 set SCRIPT_NAME=%~nx0
-set FIRST_PARAM=%1
+set FIRST_PARAM=%~1
 set FIRST_CHAR=%FIRST_PARAM:~0,1%
 
 if "%FIRST_PARAM%"=="/?" (
