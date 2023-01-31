@@ -58,7 +58,7 @@ echo.	FileSpec may contain wildcards
 echo.
 echo.	Valid values for Optional Subroutine are:
 echo.		:QuietDelete
-echo.		:VerifyDelete
+echo.		:VerifyDelete (default if none specified)
 echo.		:ForceDelete
 GOTO:EOF
 
