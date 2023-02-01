@@ -35,7 +35,7 @@ call %*
 GOTO :ExitBatch
 
 :NoSubSpecified
-REM If a subroutine label
+REM Fallthrough if no subroutine label was specified
 call :VerifyDelete %*
 
 REM -------------------------------------------------------------------
