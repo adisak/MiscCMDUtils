@@ -26,13 +26,15 @@ if "%FIRST_PARAM%"==":ShowHelp" GOTO :CallSubAndExit
 if "%FIRST_PARAM%"==":SetToFullyExpandedPath" GOTO :CallSubAndExit
 if "%FIRST_PARAM%"==":GetUniqueTemporaryFile" GOTO :CallSubAndExit
 
+REM -------------------------------------------------------------------
+
+:InvalidSub
 echo Invalid Subroutine Specified - %FIRST_PARAM%
-REM call :ShowHelp
-REM GOTO :ExitBatch
 
 :NoSubSpecified
 REM Fallthrough if no subroutine label was specified
 call :ShowHelp
+REM GOTO :ExitBatch
 
 REM -------------------------------------------------------------------
 REM EXIT BATCH FILE
@@ -40,10 +42,6 @@ REM -------------------------------------------------------------------
 :ExitBatch
 ENDLOCAL
 GOTO:EOF
-
-REM -------------------------------------------------------------------
-REM SUBROUTINES
-REM -------------------------------------------------------------------
 
 :CallSubAndExit
 ENDLOCAL
@@ -57,10 +55,13 @@ REM SUBROUTINES
 REM -------------------------------------------------------------------
 
 :ShowHelp
+SETLOCAL
+set SCRIPT_NAME=%~nx0
 echo %SCRIPT_NAME% usage:
 echo.
 echo.	%SCRIPT_NAME% [Subroutine] [Parameters]
 echo.
+ENDLOCAL
 GOTO:EOF
 
 :SetToFullyExpandedPath
@@ -68,10 +69,15 @@ set %1=%~f2
 GOTO:EOF
 
 :GetUniqueTemporaryFile
+if "%~1"=="" call :GUTF_Normal UTEMP "%~2" & GOTO:EOF 
+:GUTF_Normal
+SETLOCAL
+:GUTF_Retry
 if "%~2"=="" (
-	set %1=%tmp%\bat_%RANDOM%.tmp
+	set UTEMP=%tmp%\bat_%RANDOM%.tmp
 ) else (
-	set %1=%~f2\bat_%RANDOM%.tmp
+	set UTEMP=%~f2\bat_%RANDOM%.tmp
 )
-if EXIST "!%1!" GOTO: :GetUniqueTemporaryFile
+if EXIST "%UTEMP%" GOTO :GUTF_Retry
+ENDLOCAL & set %1=%UTEMP%
 GOTO :EOF
