@@ -33,6 +33,8 @@ if "%FIRST_PARAM%"==":GetCurrentProcID" GOTO :CallSubAndExit
 if "%FIRST_PARAM%"==":GetParentProcID" GOTO :CallSubAndExit
 if "%FIRST_PARAM%"==":GetWindowTitle" GOTO :CallSubAndExit
 if "%FIRST_PARAM%"==":AddUniqueToPath" GOTO :CallSubAndExit
+if "%FIRST_PARAM%"==":AddQuickToPath" GOTO :CallSubAndExit
+if "%FIRST_PARAM%"==":RemoveFromPath" GOTO :CallSubAndExit
 if "%FIRST_PARAM%"==":IsInPath" GOTO :CallSubAndExit
 if "%FIRST_PARAM%"==":ToUpperCase" GOTO :CallSubAndExit
 if "%FIRST_PARAM%"==":ToLowerCase" GOTO :CallSubAndExit
@@ -165,23 +167,52 @@ REM -------------------------------------------------------------------
 
 REM Add a path to %PATH% if it's not already part of %PATH%
 :AddUniqueToPath
+if "%~1"=="" GOTO :EOF
 SETLOCAL
 call :IsInPath "%~1"
-if "%IS_IN_PATH%"=="1" GOTO :AUTP_ExitSkipAdd
-call :SetToFullyExpandedPath ADD_PATH "%~1"
-ENDLOCAL & SET PATH=%PATH%;%ADD_PATH%
+if "%IS_IN_PATH%"=="1" ENDLOCAL & GOTO :EOF
+ENDLOCAL & call :AddQuickToPath "%~1%"
 GOTO :EOF
-:AUTP_ExitSkipAdd
-ENDLOCAL
+
+:AddQuickToPath
+if "%~1"=="" GOTO :EOF
+if "%PATH%"=="" GOTO :AQTP_EmptyPath
+SETLOCAL
+call :SetToFullyExpandedPath_CS ADD_PATH "%~1"
+if NOT "%PATH:~-1%"==";" set ADD_PATH=;%ADD_PATH%
+ENDLOCAL & set PATH=%PATH%%ADD_PATH%
+GOTO :EOF
+:AQTP_EmptyPath
+call :SetToFullyExpandedPath_CS PATH "%~1"
+GOTO :EOF
+
+REM :RemoveFromPath will not work with paths that contain explicit "quotes" around them
+:RemoveFromPath
+SETLOCAL ENABLEEXTENSIONS ENABLEDELAYEDEXPANSION
+call :IsInPath "%~1"
+if "%IS_IN_PATH%"=="0" ENDLOCAL & GOTO :EOF
+call :ToUpperCase "%~1" UCASE_REMOVE_PATH
+SET OLD_PATHS=%PATH%
+SET PATH=
+REM %%a will be OLD_PATH entries in quotes
+for %%a in ("%OLD_PATHS:;=";"%") do call :RFP_AddIfNotRemovedPath %%a
+ENDLOCAL & set PATH=%PATH%
+GOTO :EOF
+
+:RFP_AddIfNotRemovedPath
+call :ToUpperCase "%~1"
+if NOT "%UCASE_REMOVE_PATH%"=="%TO_UPPER%" call :AddQuickToPath "%~1"
 GOTO :EOF
 
 :IsInPath
 if "%~2"=="" call :IIP_Normal "%~1" IS_IN_PATH & GOTO:EOF
 :IIP_Normal
 SETLOCAL ENABLEEXTENSIONS ENABLEDELAYEDEXPANSION
+set IS_IN_PATH=0
+if "%~1"=="" GOTO :IIP_Done
 call :SetToFullyExpandedPath TEST_PATH "%~1"
 call :ToUpperCase "%TEST_PATH%" TEST_PATH
-set IS_IN_PATH=0
+REM %%a will be PATH entries in quotes
 for %%a in ("%PATH:;=";"%") do (
 	call :IIP_TestPath %%a
 	if "!IS_IN_PATH!"=="1" GOTO :IIP_Done
@@ -205,6 +236,7 @@ if "%~2"=="" call :TUC_Normal "%~1" TO_UPPER & GOTO:EOF
 :TUC_Normal
 SETLOCAL
 set TO_UPPER=%~1
+if "%TO_UPPER%"=="" GOTO :TUC_Done
 set TO_UPPER=%TO_UPPER:a=A%
 set TO_UPPER=%TO_UPPER:b=B%
 set TO_UPPER=%TO_UPPER:c=C%
@@ -231,6 +263,7 @@ set TO_UPPER=%TO_UPPER:w=W%
 set TO_UPPER=%TO_UPPER:x=X%
 set TO_UPPER=%TO_UPPER:y=Y%
 set TO_UPPER=%TO_UPPER:z=Z%
+:TUC_Done
 ENDLOCAL & set %~2=%TO_UPPER%
 GOTO :EOF
 
@@ -239,6 +272,7 @@ if "%~2"=="" call :TLC_Normal "%~1" TO_LOWER & GOTO:EOF
 :TLC_Normal
 SETLOCAL
 set TO_LOWER=%~1
+if "%TO_LOWER%"=="" GOTO :TLC_Done
 set TO_LOWER=%TO_LOWER:A=a%
 set TO_LOWER=%TO_LOWER:B=b%
 set TO_LOWER=%TO_LOWER:C=c%
@@ -265,6 +299,7 @@ set TO_LOWER=%TO_LOWER:W=w%
 set TO_LOWER=%TO_LOWER:X=x%
 set TO_LOWER=%TO_LOWER:Y=y%
 set TO_LOWER=%TO_LOWER:Z=z%
+:TLC_Done
 ENDLOCAL & set %~2=%TO_LOWER%
 GOTO :EOF
 
