@@ -1,0 +1,5 @@
+@echo off
+SETLOCAL
+SET MISC_PATH=%~dp0
+SET ADD_PATH=%MISC_PATH%
+ENDLOCAL & "%MISC_PATH%\MiscUtils.bat" :AddUniqueToPath "%ADD_PATH%"

@@ -12,6 +12,11 @@ REM set SCRIPT_NAME=%~nx0
 
 REM -------------------------------------------------------------------
 
+REM Validate Subroutine to call
+
+REM set MISC_UTILS_NO_VALIDATE=1
+REM if "%MISC_UTILS_NO_VALIDATE%"=="1" GOTO :CallSubAndExit
+
 set FIRST_PARAM=%~1
 set FIRST_CHAR=%FIRST_PARAM:~0,1%
 if "%FIRST_PARAM%"=="/?" (
@@ -26,16 +31,17 @@ REM Uncomment next line to skip subroutine [label is valid] safety checks
 REM GOTO :CallSubAndExit
 
 if "%FIRST_PARAM%"==":ShowHelp" GOTO :CallSubAndExit
+
 if "%FIRST_PARAM%"==":SetToFullyExpandedPath" GOTO :CallSubAndExit
 if "%FIRST_PARAM%"==":SetToFullyExpandedPath_CS" GOTO :CallSubAndExit
 if "%FIRST_PARAM%"==":GetUniqueTemporaryFile" GOTO :CallSubAndExit
-if "%FIRST_PARAM%"==":GetCurrentProcID" GOTO :CallSubAndExit
-if "%FIRST_PARAM%"==":GetParentProcID" GOTO :CallSubAndExit
-if "%FIRST_PARAM%"==":GetWindowTitle" GOTO :CallSubAndExit
+if "%FIRST_PARAM%"==":RemoveTrailingSlashes" GOTO :CallSubAndExit
+
 if "%FIRST_PARAM%"==":AddUniqueToPath" GOTO :CallSubAndExit
 if "%FIRST_PARAM%"==":AddQuickToPath" GOTO :CallSubAndExit
 if "%FIRST_PARAM%"==":RemoveFromPath" GOTO :CallSubAndExit
 if "%FIRST_PARAM%"==":IsInPath" GOTO :CallSubAndExit
+
 if "%FIRST_PARAM%"==":ToUpperCase" GOTO :CallSubAndExit
 if "%FIRST_PARAM%"==":ToLowerCase" GOTO :CallSubAndExit
 
@@ -105,62 +111,22 @@ GOTO :EOF
 
 REM -------------------------------------------------------------------
 
-:GetCurrentProcID
-if "%~1"=="" call :GCPID_Normal PROCID & GOTO:EOF
-:GCPID_Normal
-SETLOCAL
-set PROCID=
-for /f %%a in ('wmic os get LocalDateTime ^| findstr [0-9]') do set NOW=%%a
-call :GetUniqueTemporaryFile
-wmic process where "Name='wmic.exe' and CreationDate > '%NOW%'" get ParentProcessId > %UTEMP%
-for /f "skip=1" %%a in ('type "%UTEMP%"') do (
-	set PROCID=%%a
-	GOTO :GCPID_PIDSet
-)
-:GCPID_PIDSet
-del "%UTEMP%" >nul 2>&1
-ENDLOCAL & set %~1=%PROCID%
-GOTO :EOF
-
-:GetParentProcID
-if "%~2"=="" call :GPPID_Normal "%~1" PARENT_PROCID & GOTO:EOF
-:GPPID_Normal
-SETLOCAL
-set PARENT_PROCID=
-for /f "usebackq skip=1" %%a in (`wmic process where "Handle='%~1'" get ParentProcessId`) do (
-	set PARENT_PROCID=%%a
-	GOTO :GPPID_PIDSet
-)
-:GPPID_PIDSet
-ENDLOCAL & set %~2=%PARENT_PROCID%
-GOTO :EOF
-
-REM -------------------------------------------------------------------
-
-REM This only works for English Locale
-:GetWindowTitle
-if "%~1"=="" call :GWT_Normal WINTITLE & GOTO:EOF 
-:GWT_Normal
-SETLOCAL
-call :GetCurrentProcID
-call :GetUniqueTemporaryFile
-
-:GWT_Retry
-set WINTITLE=
-tasklist /fi "pid eq %PROCID%" /fo list /v > %UTEMP%
-for /f "tokens=* delims=" %%a in ('findstr "Window Title:" "%UTEMP%"') do (
-	set WINTITLE=%%a
-)
-del "%UTEMP%" >nul 2>&1
-
-if NOT "%WINTITLE%"=="Window Title: N/A" GOTO :GWT_Acquired
-call :GetParentProcID %PROCID% PROCID
-if NOT "%PROCID%"=="" GOTO :GWT_Retry
-
-:GWT_Acquired
-if "Window Title: "=="%WINTITLE:~0,14%" set WINTITLE=%WINTITLE:~14%
-if "Administrator:  "=="%WINTITLE:~0,16%" set WINTITLE=%WINTITLE:~16%
-ENDLOCAL & set %~1=%WINTITLE%
+:RemoveTrailingSlashes
+SETLOCAL ENABLEEXTENSIONS ENABLEDELAYEDEXPANSION
+if "%~2"=="" GOTO :RTS_OneParm
+set RTS_RESULT=%~2
+GOTO :RTS_Continue
+:RTS_OneParm
+set RTS_RESULT=
+if "%~1"=="" GOTO :RTS_Done
+set RTS_RESULT=!%~1!
+:RTS_Continue
+REM Does string have a trailing slash? if so remove it 
+if NOT "%RTS_RESULT:~-1%"=="\" GOTO :RTS_Done
+set RTS_RESULT=%RTS_RESULT:~0,-1%
+GOTO :RTS_Continue
+:RTS_Done
+ENDLOCAL & set %~1=%RTS_RESULT%
 GOTO :EOF
 
 REM -------------------------------------------------------------------
