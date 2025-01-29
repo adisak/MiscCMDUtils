@@ -1,0 +1,1 @@
+The Snippets directory is here for incomplete / non-standalone batch files containing examples that either demonstrate how to do something or contain subroutines that you can copy into other batch files.
